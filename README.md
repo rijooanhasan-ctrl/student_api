@@ -199,14 +199,14 @@ docker compose down -v
 
 The pipeline is defined in `Jenkinsfile` and automates validation, building, testing, and deployment:
 
-| Stage | Description | Verification Status |
+| Stage | Description | Jenkins Execution Status |
 | :--- | :--- | :--- |
-| **1. Checkout** | Clones the target branch from source control | **VERIFIED** (in local testing) |
-| **2. Validate** | Runs `python -m compileall` and `docker compose config -q` syntax checks | **VERIFIED** (syntax confirmed) |
-| **3. Build Docker Image** | Builds Docker images tagged with `${BUILD_NUMBER}`, git SHA, and `latest` | **VERIFIED** |
-| **4. Test** | Starts an isolated project `student-ci-${BUILD_NUMBER}` with ephemeral secrets and publishes JUnit test reports | **VERIFIED** (container test suite passed) |
-| **5. Push to Docker Hub** | Authenticates and pushes images to Docker Hub (active when `PUSH_IMAGE=true`) | **NOT VERIFIED** (requires Jenkins runtime) |
-| **6. Deploy (demo)** | Deploys demo stack using Jenkins secret file credential (active on `main` when `DEPLOY=true`) | **NOT VERIFIED** (requires Jenkins runtime) |
+| **1. Checkout** | Clones the target branch from source control | **RUN IN JENKINS** (Verified passing in Build #4) |
+| **2. Validate** | Runs `docker compose config -q` and `python -m compileall` inside the built image | **RUN IN JENKINS** (Verified passing in Build #4) |
+| **3. Build Docker Image** | Builds Docker images tagged with `${BUILD_NUMBER}`, git SHA, and `latest` | **RUN IN JENKINS** (Verified passing in Build #4) |
+| **4. Test** | Starts isolated project `student-ci-${BUILD_NUMBER}` with throwaway MySQL, executes 64 tests, and publishes JUnit reports | **RUN IN JENKINS** (Verified: 64/64 tests passed) |
+| **5. Push to Docker Hub** | Authenticates and pushes images to Docker Hub (active when `PUSH_IMAGE=true`) | **NOT TESTED** (Skipped in Build #4; no Docker Hub credentials configured) |
+| **6. Deploy (demo)** | Deploys demo stack on port 5001 using `student-demo-env` secret file and verifies container health | **RUN IN JENKINS** (Verified passing in Build #4: container healthy & responding 200) |
 
 *Instructions for building and running the Jenkins controller are provided in [jenkins/README.md](jenkins/README.md).*
 
@@ -265,15 +265,61 @@ docker compose exec web pytest -v
 
 ## 11. Screenshots
 
-Expected screenshot captures will be saved to `docs/screenshots/`:
-- `dashboard.png` — Real-time KPI stat cards and recent students overview
-- `students_list.png` — Searchable students directory table
-- `add_student.png` — Student registration form with validation
-- `subjects_list.png` — Subject catalog with maximum marks
-- `marks_entry.png` — Multi-subject marks entry form
-- `result_sheet.png` — Official printable student marksheet
+Documentation screenshots captured automatically with Playwright:
 
-*(Screenshots to be added manually by developer).*
+### Web Application UI
+
+#### 1. Real-Time Academic Performance Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+*Live KPI cards displaying total students, total subjects, evaluated count, pass/fail metrics, and class average percentage.*
+
+#### 2. Student Enrollment Directory
+![Students Directory](docs/screenshots/students_list.png)
+*Searchable student directory table with roll numbers, departments, courses, and quick action links.*
+
+#### 3. Student Registration Form
+![Add Student](docs/screenshots/add_student.png)
+*Clean enrollment form enforcing unique roll numbers, academic email validation, and semester constraints.*
+
+#### 4. Curriculum & Subject Catalog
+![Subjects List](docs/screenshots/subjects_list.png)
+*Subject catalog management displaying unique subject codes, course names, and maximum marks.*
+
+#### 5. Dynamic Marks Entry Form
+![Marks Entry](docs/screenshots/marks_entry.png)
+*Multi-subject marks entry interface allowing dynamic addition of subject rows with client-side row cloning.*
+
+#### 6. Input Validation & Error Handling
+![Invalid Marks Error](docs/screenshots/invalid_marks_error.png)
+*Validation feedback preventing submission when marks obtained exceed maximum marks (e.g. 105 / 100).*
+
+#### 7. Student Marks Overview
+![Student Marks](docs/screenshots/student_marks.png)
+*Academic marks record for an enrolled student with semester-based filtering and quick update/delete controls.*
+
+#### 8. Official Academic Result Sheet
+![Result Sheet](docs/screenshots/result_sheet.png)
+*Printable academic statement calculating Grand Total (418.00 / 500.00), Aggregate (83.60%), Letter Grade (A), and PASS status.*
+
+#### 9. Result Sheet Clean Print Preview
+![Result Print Preview](docs/screenshots/result_print_preview.png)
+*Print media view (`@media print`) stripping navigation sidebars and action buttons for clean A4 printing.*
+
+---
+
+### Container Deployment & CI/CD Evidence
+
+#### 10. Local Development Docker Stack Status
+![Docker PS Local](docs/screenshots/docker_ps_local.png)
+*Real command output rendering of `docker compose ps` running on host port 5000.*
+
+#### 11. Isolated Demo Deployment Stack Status
+![Docker PS Demo](docs/screenshots/docker_ps_demo.png)
+*Real command output rendering of `docker compose -p student-demo ps` running on host port 5001.*
+
+#### 12. Jenkins Build #4 Deployment Verification Log
+![Jenkins Deploy Log](docs/screenshots/jenkins_deploy_log.png)
+*Real log extract from Jenkins Build #4 console verifying container health and `/health` response on the demo stack.*
 
 ---
 
